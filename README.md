@@ -69,7 +69,7 @@ movements.
 
 <div class="figure" style="text-align: center">
 
-<img src="report-thesis_files/figure-gfm/yieldcurve-1.png" alt="Spot Yield Curve on March 10, 2020"  />
+<img src="report/report-thesis_files/figure-gfm/yieldcurve-1.png" alt="Spot Yield Curve on March 10, 2020"  />
 
 <p class="caption">
 
@@ -127,7 +127,7 @@ importantly to identify those common movements.
 
 <div class="figure" style="text-align: center">
 
-<img src="report-thesis_files/figure-gfm/termstructure-1.png" alt="Figure: US Treasury Interest Rates 2006-2020"  />
+<img src="report/report-thesis_files/figure-gfm/termstructure-1.png" alt="Figure: US Treasury Interest Rates 2006-2020"  />
 
 <p class="caption">
 
@@ -210,7 +210,7 @@ inverted “bumps” of the yield curve (Alexander 2008a)\[6\].
 
 <div class="figure" style="text-align: center">
 
-<img src="report-thesis_files/figure-gfm/eigenvectors-1.png" alt="Eigenvectors"  />
+<img src="report/report-thesis_files/figure-gfm/eigenvectors-1.png" alt="Eigenvectors"  />
 
 <p class="caption">
 
@@ -252,7 +252,7 @@ Table: Slice of the first five Eigenvectors with corresponding loadings
 
 Table: First five eigenvalues.
 
-<img src="report-thesis_files/figure-gfm/eigenvalues-histogram-1.png" style="display: block; margin: auto;" />
+<img src="report/report-thesis_files/figure-gfm/eigenvalues-histogram-1.png" style="display: block; margin: auto;" />
 
 Once the eigenvalues and eigenvectors are found using the singular value
 decomposition, the principal components are computed using equation
@@ -299,7 +299,7 @@ weights. Therefore, we might say informally that PC1 “incorporates” the
 “information” of the first eigenvector which captures a parallel shift
 of the yield, and so on.
 
-<img src="report-thesis_files/figure-gfm/three-pcs-graph-1.png" style="display: block; margin: auto;" />
+<img src="report/report-thesis_files/figure-gfm/three-pcs-graph-1.png" style="display: block; margin: auto;" />
 
 Furthermore, it is useful to recall that the PCs are *orthogonal*, thus
 their correlation is zero. This property is particularly useful in
@@ -369,7 +369,7 @@ factor model estimated by means of principal component which makes a
 pretty good job in replicating the overall covariation of the actual
 system depicted on the bottom.
 
-<img src="report-thesis_files/figure-gfm/representation-vs-actual-1.png" style="display: block; margin: auto;" /><img src="report-thesis_files/figure-gfm/representation-vs-actual-2.png" style="display: block; margin: auto;" />
+<img src="report/report-thesis_files/figure-gfm/representation-vs-actual-1.png" style="display: block; margin: auto;" /><img src="report/report-thesis_files/figure-gfm/representation-vs-actual-2.png" style="display: block; margin: auto;" />
 
 ## Bootstrap: Eigenvalues and Eigenvectors
 
@@ -422,8 +422,8 @@ associated variability, under the *i.i.d.* assumption.
 The results of such process are illustrated in the following figures and
 tables.
 
-<img src="report-thesis_files/figure-gfm/eigenvalues-densities-1.png" style="display: block; margin: auto;" />
-<img src="report-thesis_files/figure-gfm/eigenvalues-boxplots-1.png" style="display: block; margin: auto;" />
+<img src="report/report-thesis_files/figure-gfm/eigenvalues-densities-1.png" style="display: block; margin: auto;" />
+<img src="report/report-thesis_files/figure-gfm/eigenvalues-boxplots-1.png" style="display: block; margin: auto;" />
 
 The two figures above illustrate the empirical distributions and box
 plots of the first three eigenvalues resulting from 10.000 bootstrap
@@ -460,7 +460,7 @@ amount of variance equal to 0.916 on average.
 Table: Descriptive statistics resulting from 10.000 bootstrap samples of
 the cumulative variance explained by the first three components
 
-<img src="report-thesis_files/figure-gfm/density-var-explained-first-three-evals-1.png" style="display: block; margin: auto;" />
+<img src="report/report-thesis_files/figure-gfm/density-var-explained-first-three-evals-1.png" style="display: block; margin: auto;" />
 
 For inferential purposes, it is useful to consider the 95% estimated
 confidence interval for the four statistics obtained from 10.000
@@ -494,7 +494,7 @@ which the longer yields maturities have positive changes.
 
 Finally, the third eigenvector almost always shows the typical curvature
 component.
-<img src="report-thesis_files/figure-gfm/bootstrap-loadings-1.png" style="display: block; margin: auto;" />
+<img src="report/report-thesis_files/figure-gfm/bootstrap-loadings-1.png" style="display: block; margin: auto;" />
 
 ## Bond Portfolio
 
@@ -539,7 +539,7 @@ dictated by each of the portfolio cash flows. This is possible since,
 each cash flow can be regarded as a zero-coupon bond whose corresponding
 yield is the one approximated by means of Svensson’s model.
 
-<img src="report-thesis_files/figure-gfm/cash-flows-figure-1.png" style="display: block; margin: auto;" />
+<img src="report/report-thesis_files/figure-gfm/cash-flows-figure-1.png" style="display: block; margin: auto;" />
 
 Figure below shows the interpolation performed by Svensson’s model\[12\]
 on the yield curve observed on March 10, 2020 at the requested cash flow
@@ -562,8 +562,8 @@ reconstruct the past term structure as if we were capable of observing
 each day the yield curve at the maturities dictated by the portfolio
 cash flows.
 
-<img src="report-thesis_files/figure-gfm/svensson-yield-curve-figure-1.png" style="display: block; margin: auto;" />
-<img src="report-thesis_files/figure-gfm/svensson-term-structure-1.png" style="display: block; margin: auto;" />
+<img src="report/report-thesis_files/figure-gfm/svensson-yield-curve-figure-1.png" style="display: block; margin: auto;" />
+<img src="report/report-thesis_files/figure-gfm/svensson-term-structure-1.png" style="display: block; margin: auto;" />
 
 The functional form for the estimated spot yield curve by Svensson’s
 model, implemented in the *YieldCurve* R package can be seen in its
@@ -700,7 +700,7 @@ z\_{t}^{(3)}](https://latex.codecogs.com/png.latex?-p%5C%26l_%7Bt%7D%5Capprox%20
 which can be used to immunize the portfolio against the most frequent
 movements of the yield curve.
 
-<img src="report-thesis_files/figure-gfm/p&l-graph-1.png" style="display: block; margin: auto;" />
+<img src="report/report-thesis_files/figure-gfm/p&l-graph-1.png" style="display: block; margin: auto;" />
 
 ## Conclusions
 
