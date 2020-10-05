@@ -100,13 +100,13 @@ pca %>%
   geom_line() +
   labs(x = "Maturity",
        y = "Loadings",
-       title = "Eigenvectors of the US daily spot rate Covariance Matrix") +
+       title = "Eigenvectors from SVD of the US daily spot rate") +
   scale_x_discrete(limits = mat) +
   theme_light() +
   theme(panel.grid.major = element_blank(),
         plot.title = element_text(hjust = 0.5),
         legend.position = "top")
-# ggsave("three-eigenvectors.png", path = "plots", 
+# ggsave("three-eigenvectors.png", path = "plots",
 #        device = "png", dpi = 320, height = 210, width = 297, units="mm")
 
 #### PCA REPRESENTATION ####
