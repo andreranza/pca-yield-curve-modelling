@@ -3,8 +3,12 @@
 .RData
 .Rproj
 .Ruserdata
-report
+report/report-thesis_cache
+report/biblio-report.bib
+report/report-thesis.md
+report/report-thesis.Rmd
 slides-thesis.pdf
 slides-thesis.pdf.key
 thesis-manuscript.pdf
 pca-yield-curve-modelling.Rproj
+plots
