@@ -40,7 +40,7 @@ using the *bootstrap*.
   - Statistical approach can identify not only parallel shifts, but also
     *tilts* and *curvature* movements.
 
-![seminal-paper](/Users/andrearanzato/github/pca-yield-curve-modelling/report/cover-seminal-paper.png)
+![seminal-paper](/Users/andrearanzato/github/pca-yield-curve-modelling/report/report-thesis_files/figure-gfm/cover-seminal-paper.png){width=50%}
 
 ## PCA in Market Risk Analysis
 
@@ -69,7 +69,7 @@ movements.
 
 <div class="figure" style="text-align: center">
 
-<img src="report-thesis_files/figure-gfm/yieldcurve-1.png" alt="Spot Yield Curve on March 10, 2020"  />
+<img src="/Users/andrearanzato/github/pca-yield-curve-modelling/report/report-thesis_files/figure-gfm/yieldcurve-1.png" alt="Spot Yield Curve on March 10, 2020"  />
 
 <p class="caption">
 
