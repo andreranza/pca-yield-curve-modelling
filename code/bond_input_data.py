@@ -8,7 +8,7 @@ It returns a csv file having as columns the bond features.
 import pandas as pd
 
 def bondsDataFetcher():
-
+	"""Grow a dict of bond data from user inputs and return it as a csv file."""
 	bonds = {
 	'name': list(),
 	'mrkt_price': list(),
