@@ -79,7 +79,7 @@ class multipleCouponBond:
 		self.results = {'ytm':r, 'pv':pv, 'pv_c':pv_c, 
 						'pv_par':pv_par, 'cash_flows':cash_flows}
 		
-		return self.results['ytm']
+		return round(self.results['ytm'], 4)
 
 	def getActualPrice(self):
 		"""Return the present value the bond."""
