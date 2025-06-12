@@ -1,161 +1,237 @@
 """
-This a Python Class Object which allows to instanciate coupon bonds 
-given the following parameters:
+Improved Bond Pricing Class
 
-- face value in dollars, 
-- maturity in years, 
-- annual coupon rate in decimal points,
-- trading price in dollars.
-
-
-It provides methods to calculate the following financial quntities:
-
-- yield to maturity (using the bisection search algorithm),
-- present value at time t=0 of each coupon paid yearly,
-- interest-on-interest under the assumption of yearly yield to maturity as reinvestment rate,
-- duration of the bond,
-- capital gain.
+This class provides a cleaner, more efficient implementation for pricing
+coupon bonds with better separation of concerns and lazy evaluation.
 """
 
-class multipleCouponBond:
-	"""
-	Create a Bond with specifics expressed on annual basis.
-	price: selling price on the primary market.
-	par_value: nominal face value of the bond. If price = par_value, bond sold at par.  
-	mat: number of years until the bond matures.
-	coupon_rate: percentage in decimals of the par_value.
-	price: valiue paid on the primary market to purchase the bond
-	"""
+from typing import List, Dict, Optional
 
-	def __init__(self, par_value, mat, coupon_rate, price):
-		self.par_value = par_value
-		self.mat = mat 
-		self.coupon_rate = coupon_rate
-		self.price = price
-		self.getCoupon() 
-		self.ytm()
-		self.cashFlows()
-		self.getActualPrice()
-		self.getPeriods()
-		self.totalCouponPayments()
-		self.duration()
-		self.interestOnInterest()
-		self.capitalGain()
 
-	def getPeriods(self):
-		"""Return a list with the time periods."""
-		self.periods = [t for t in range(1,self.mat+1)]
-		return self.periods
+class CouponBond:
+    """
+    A coupon bond with annual payments.
+    
+    Args:
+        par_value: Face value of the bond in dollars
+        maturity: Years until maturity
+        coupon_rate: Annual coupon rate as decimal (e.g., 0.08 for 8%)
+        price: Current market price in dollars
+    """
+    
+    def __init__(self, par_value: float, maturity: int, coupon_rate: float, price: float):
+        # Validate inputs
+        if par_value <= 0:
+            raise ValueError("Par value must be positive")
+        if maturity <= 0:
+            raise ValueError("Maturity must be positive")
+        if coupon_rate < 0:
+            raise ValueError("Coupon rate cannot be negative")
+        if price <= 0:
+            raise ValueError("Price must be positive")
+            
+        self.par_value = par_value
+        self.maturity = maturity
+        self.coupon_rate = coupon_rate
+        self.price = price
+        
+        # Cache for expensive calculations
+        self._ytm: Optional[float] = None
+        self._duration: Optional[float] = None
+        self._cash_flows: Optional[List[float]] = None
+    
+    @property
+    def annual_coupon(self) -> float:
+        """Annual coupon payment."""
+        return self.par_value * self.coupon_rate
+    
+    @property
+    def periods(self) -> List[int]:
+        """List of payment periods (1, 2, 3, ..., maturity)."""
+        return list(range(1, self.maturity + 1))
+    
+    def present_value_at_rate(self, discount_rate: float) -> float:
+        """
+        Calculate present value using given discount rate.
+        
+        Args:
+            discount_rate: Discount rate as decimal
+            
+        Returns:
+            Present value of the bond
+        """
+        if discount_rate <= -1:
+            raise ValueError("Discount rate must be greater than -1")
+            
+        pv_coupons = sum(
+            self.annual_coupon / (1 + discount_rate) ** t 
+            for t in range(1, self.maturity + 1)
+        )
+        pv_principal = self.par_value / (1 + discount_rate) ** self.maturity
+        
+        return pv_coupons + pv_principal
+    
+    def yield_to_maturity(self, tolerance: float = 1e-6, max_iterations: int = 100) -> float:
+        """
+        Calculate yield to maturity using bisection method.
+        
+        Args:
+            tolerance: Convergence tolerance
+            max_iterations: Maximum number of iterations
+            
+        Returns:
+            Yield to maturity as decimal
+        """
+        if self._ytm is not None:
+            return self._ytm
+        
+        # Initial bounds
+        r_low, r_high = 0.0, 1.0  # 0% to 100%
+        
+        # Extend upper bound if needed
+        while self.present_value_at_rate(r_high) > self.price:
+            r_high *= 2
+            if r_high > 10:  # Sanity check
+                raise ValueError("Cannot find upper bound for YTM")
+        
+        # Bisection search
+        for _ in range(max_iterations):
+            r_mid = (r_low + r_high) / 2
+            pv = self.present_value_at_rate(r_mid)
+            
+            if abs(pv - self.price) < tolerance:
+                self._ytm = r_mid
+                return self._ytm
+            
+            if pv > self.price:
+                r_low = r_mid
+            else:
+                r_high = r_mid
+        
+        raise ValueError(f"YTM did not converge within {max_iterations} iterations")
+    
+    def coupon_cash_flows_pv(self) -> List[float]:
+        """Present value of each coupon payment."""
+        if self._cash_flows is not None:
+            return self._cash_flows
+            
+        ytm = self.yield_to_maturity()
+        self._cash_flows = [
+            self.annual_coupon / (1 + ytm) ** t 
+            for t in range(1, self.maturity + 1)
+        ]
+        return self._cash_flows
+    
+    def duration(self) -> float:
+        """Macaulay duration of the bond."""
+        if self._duration is not None:
+            return self._duration
+            
+        cash_flows = self.coupon_cash_flows_pv()
+        ytm = self.yield_to_maturity()
+        
+        # Include present value of principal repayment
+        pv_principal = self.par_value / (1 + ytm) ** self.maturity
+        total_pv = sum(cash_flows) + pv_principal
+        
+        # Weight each cash flow by its time period
+        weighted_time = sum(
+            t * cf for t, cf in zip(range(1, self.maturity + 1), cash_flows)
+        )
+        # Add weighted time for principal
+        weighted_time += self.maturity * pv_principal
+        
+        self._duration = weighted_time / total_pv
+        return self._duration
+    
+    def modified_duration(self) -> float:
+        """Modified duration (price sensitivity to yield changes)."""
+        ytm = self.yield_to_maturity()
+        return self.duration() / (1 + ytm)
+    
+    def total_coupon_payments(self) -> float:
+        """Total coupon payments over the life of the bond."""
+        return self.maturity * self.annual_coupon
+    
+    def interest_on_interest(self) -> float:
+        """
+        Interest earned by reinvesting coupons at the YTM rate.
+        
+        This assumes each coupon is reinvested at the YTM until maturity.
+        """
+        ytm = self.yield_to_maturity()
+        
+        # Future value of annuity formula
+        if ytm == 0:
+            future_value_coupons = self.total_coupon_payments()
+        else:
+            future_value_coupons = self.annual_coupon * (
+                ((1 + ytm) ** self.maturity - 1) / ytm
+            )
+        
+        return future_value_coupons - self.total_coupon_payments()
+    
+    def capital_gain(self) -> float:
+        """Capital gain/loss (positive if bought below par)."""
+        return self.par_value - self.price
+    
+    def current_yield(self) -> float:
+        """Current yield (annual coupon / current price)."""
+        return self.annual_coupon / self.price
+    
+    def summary(self) -> Dict[str, float]:
+        """Return a summary of all bond metrics."""
+        return {
+            'par_value': self.par_value,
+            'price': self.price,
+            'annual_coupon': self.annual_coupon,
+            'maturity': self.maturity,
+            'ytm': self.yield_to_maturity(),
+            'current_yield': self.current_yield(),
+            'duration': self.duration(),
+            'modified_duration': self.modified_duration(),
+            'total_coupon_payments': self.total_coupon_payments(),
+            'interest_on_interest': self.interest_on_interest(),
+            'capital_gain': self.capital_gain()
+        }
+    
+    def __repr__(self) -> str:
+        return (f"CouponBond(par_value={self.par_value}, maturity={self.maturity}, "
+                f"coupon_rate={self.coupon_rate:.1%}, price={self.price})")
 
-	def getCoupon(self):
-		"""Compute the annual coupon."""
-		self.coupon = self.par_value*self.coupon_rate
-		return self.coupon
 
-	def ytm(self, r_low = 0.00, r_high = 100.00, epsilon = 0.01):
-		"""Compute the yield to maturity by means of bisection search."""
-		r = (r_high + r_low)/2
-		# Calculate the present value of coupons
-		cash_flows = [(self.coupon/((1+r)**t)) for t in range(1, self.mat+1)]
-		pv_c = sum(cash_flows)
-		# Calculate the present value of par value
-		pv_par = self.par_value/((1+r)**(self.mat))
-		# Bond value 
-		pv = pv_c + pv_par
-
-		while abs(pv - self.price) > epsilon:
-			if pv < self.price: # r should decrease
-				r_high = r
-			else:	# r should decrease
-				r_low = r
-			# update r
-			r = (r_high + r_low)/2
-			# update pv
-			cash_flows = [(self.coupon/((1+r)**t)) for t in range(1, self.mat+1)]
-			pv_c = sum(cash_flows)
-			pv_par = self.par_value/((1+r)**(self.mat))
-			pv = pv_c + pv_par
-
-		self.results = {'ytm':r, 'pv':pv, 'pv_c':pv_c, 
-						'pv_par':pv_par, 'cash_flows':cash_flows}
-		
-		return round(self.results['ytm'], 4)
-
-	def getActualPrice(self):
-		"""Return the present value the bond."""
-		return round(self.results['pv'], 2)
-
-	def actualParValue(self):
-		"""Return the present value of the final payback on the capital invested."""
-		return round(self.results['pv_par'], 2)
-
-	def cashFlows(self):
-		"""Return a list with the present value at time t=0 of the coupons payments."""
-		cf = map(lambda x: round(x, 2), self.results['cash_flows'])
-		return list(cf)
-
-	def duration(self):
-		"""Compute the duration of the bond."""
-		self.d_num = [p*cf for p,cf in zip(self.periods, self.results['cash_flows'])]
-		self.d = sum(self.d_num)/self.results['pv']
-		return round(self.d, 2)
-
-	def totalCouponPayments(self):
-		"""Compute the total coupon payments of the bond."""
-		self.tot_coup_paym = self.mat*self.coupon
-		return round(self.tot_coup_paym, 2)
-
-	def interestOnInterest(self):
-		"""Compute the interest on interest of the bond."""
-		self.int_on_int = ((self.coupon)*((((1+self.results['ytm'])**(self.mat)-1))/(self.results['ytm'])))-(self.tot_coup_paym)
-		return round(self.int_on_int, 2)
-
-	def capitalGain(self):
-		"""Return the capital gain of the bond."""
-		self.capital_gain = self.par_value - self.price
-		return self.capital_gain
-
-	
+# Example usage and testing
 if __name__ == '__main__':
-
-	bond1 = multipleCouponBond(par_value = 1000, mat = 30, coupon_rate = 0.08, price = 1000)
-	print('ytm:', bond1.ytm())
-	print('coupon value:', bond1.getCoupon())
-	print('periods:', bond1.getPeriods())
-	print('duration:', bond1.duration())
-	print('coupon cash flows:', bond1.cashFlows())
-	print('present value:', bond1.getActualPrice())
-	print('present value of par value:', bond1.actualParValue())
-	print('total coupon payments:', bond1.totalCouponPayments())
-	print('interest on interest:', bond1.interestOnInterest())
-
-	bond2 = multipleCouponBond(par_value = 1000, mat = 15, coupon_rate = 0.07, price = 769.40)
-	print('ytm:', bond2.ytm())
-	print('coupon value:', bond2.getCoupon())
-	print('periods:', bond2.getPeriods())
-	print('duration:', bond2.duration())
-	print('coupon cash flows:', bond2.cashFlows())
-	print('present value:', bond2.getActualPrice())
-	print('present value of par value:', bond2.actualParValue())
-	print('total coupon payments:', bond2.totalCouponPayments())
-	print('interest on interest:', bond2.interestOnInterest())
-	print('capital gain:', bond2.capitalGain())
-	
-	bond3 = multipleCouponBond(par_value = 1000, mat = 30, coupon_rate = 0.08, price = 850)
-	print('ytm:', bond3.ytm())
-	print('coupon value:', bond3.getCoupon())
-	print('periods:', bond3.getPeriods())
-	print('duration:', bond3.duration())
-	print('coupon cash flows:', bond3.cashFlows())
-	print('present value:', bond3.getActualPrice())
-	print('present value of par value:', bond3.actualParValue())
-	print('total coupon payments:', bond3.totalCouponPayments())
-	print('interest on interest:', bond3.interestOnInterest())
-	print('capital gain:', bond3.capitalGain())
-
-	# we calculate the yield to maturity for a coupon bond with fixed parameters
-	# but different maturities
-	yields_given_mat = list()
-	for mat in range(1,31):
-		yields_given_mat.append(multipleCouponBond(1000,mat,0.08,950).ytm())
-	print(yields_given_mat)
+    # Test the examples from the original code
+    print("=== Bond 1: Par Bond ===")
+    bond1 = CouponBond(par_value=1000, maturity=30, coupon_rate=0.08, price=1000)
+    print(f"Bond: {bond1}")
+    print(f"YTM: {bond1.yield_to_maturity():.4f} ({bond1.yield_to_maturity():.2%})")
+    print(f"Duration: {bond1.duration():.2f} years")
+    print(f"Current Yield: {bond1.current_yield():.2%}")
+    print()
+    
+    print("=== Bond 2: Discount Bond ===")
+    bond2 = CouponBond(par_value=1000, maturity=15, coupon_rate=0.07, price=769.40)
+    print(f"Bond: {bond2}")
+    print(f"YTM: {bond2.yield_to_maturity():.4f} ({bond2.yield_to_maturity():.2%})")
+    print(f"Duration: {bond2.duration():.2f} years")
+    print(f"Capital Gain: ${bond2.capital_gain():.2f}")
+    print()
+    
+    print("=== Bond 3: Discount Bond ===")
+    bond3 = CouponBond(par_value=1000, maturity=30, coupon_rate=0.08, price=850)
+    print(f"Bond: {bond3}")
+    print(f"Summary: {bond3.summary()}")
+    print()
+    
+    # Yield curve analysis
+    print("=== Yield by Maturity Analysis ===")
+    yields_by_maturity = []
+    for mat in range(1, 31):
+        bond = CouponBond(par_value=1000, maturity=mat, coupon_rate=0.08, price=950)
+        yields_by_maturity.append(bond.yield_to_maturity())
+    
+    print("Maturity (years) -> YTM")
+    for i, ytm in enumerate(yields_by_maturity[::5], 1):  # Every 5th year
+        print(f"{i*5:2d} -> {ytm:.4f} ({ytm:.2%})")
